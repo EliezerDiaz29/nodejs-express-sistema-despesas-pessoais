@@ -1,0 +1,25 @@
+{
+  "name": "nodejs-express-sistema-despesas-pessoais",
+  "version": "1.0.0",
+  "description": "Desenvolver uma API REST em Node.js para gerenciamento de despesas pessoais, permitindo registrar, listar, atualizar e remover despesas.",
+  "type":"module",
+  "main": "index.js",
+  
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/EliezerDiaz29/nodejs-express-sistema-despesas-pessoais.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/EliezerDiaz29/nodejs-express-sistema-despesas-pessoais/issues"
+  },
+  "homepage": "https://github.com/EliezerDiaz29/nodejs-express-sistema-despesas-pessoais#readme",
+  "dependencies": {
+    "express": "^5.2.1"
+  }
+}
