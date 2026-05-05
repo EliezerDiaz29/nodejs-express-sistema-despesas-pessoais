@@ -1,105 +1,117 @@
 import expenseModel from '../models/expenseModels.js';
+import expenseView from '../views/expenseViews.js';
 
-// Listar todas las despesas
-function getAllDespesas(req, res) {
-    const { category, startDate, endDate } = req.query; 
-
-    let despesas = expenseModel.todasExpense();
-
-    if (category) {
-        despesas = despesas.filter(d => d.category === category);
-    }
-
-    if (startDate) {
-        despesas = despesas.filter(d => new Date(d.date) >= new Date(startDate))
-    }
-
-    if (endDate) {
-        despesas = despesas.filter(d => new Date(d.date) <= new Date(endDate))
-    }
-
-    if (despesas.length === 0) {
-        let msg = "No se encontraron despesas";
-        if (category) msg += ` para la categoría ${category}`;
-        if (startDate || endDate) msg += " en ese rango de fechas";
-        return res.status(404).json({ message: msg });
-    }
-
-    res.status(200).json(despesas);
-}
-
-// Buscar una despesa por ID
-function getDespesaById(req, res) {
-    const { id } = req.params;
-    const despesa = expenseModel.buscarPorId(id);
-
-    if (!despesa) {
-        return res.status(404).json({ error: "Despesa no encontrada" });
-    } 
-    res.status(200).json(despesa)
-}
-
-// Crear una nueva despesa
-function createDespesa(req, res) {
+// LIST
+function list(req, res) {
     try {
-        const novaDespesa = expenseModel.crearExpense(req.body);
-        res.status(201).json(novaDespesa);
-    } catch (error) {
-        res.status(400).json({ error: error.message });
-    }
-}
+        let data = expenseModel.findAll();
 
-// Actualizar una despesa por ID
-function updateDespesa(req, res) {
-    try {
-        const updated = expenseModel.actualizarExpense(req.params.id, req.body);
+        const { category, startDate, endDate, summary, groupBy } = req.query;
 
-        if (!updated) {
-            return res.status(404).json({ error: "Despesa no encontrada" });
+        if (category) {
+            data = data.filter(e => e.category === category);
         }
 
-        res.json(updated);
+        if (startDate) {
+            data = data.filter(e => new Date(e.date) >= new Date(startDate));
+        }
+
+        if (endDate) {
+            data = data.filter(e => new Date(e.date) <= new Date(endDate));
+        }
+
+        if (summary === 'total') {
+            return expenseView.success(res, {
+                total: expenseModel.calculateTotal(data)
+            });
+        }
+
+        if (groupBy === 'category') {
+            return expenseView.success(res, expenseModel.groupByCategory(data));
+        }
+
+        return expenseView.success(res, data);
+
     } catch (error) {
-        res.status(400).json({ error: error.message });
+        return expenseView.serverError(res, error.message);
     }
 }
 
-// Eliminar una despesa por ID
-function deleteDespesa(req, res) {
-    const success = expenseModel.eliminarExpense(req.params.id);
+// GET BY ID
+function getById(req, res) {
+    try {
+        const data = expenseModel.findById(req.params.id);
 
-    if (!success) {
-        return res.status(404).json({ error: "Despesa no encontrada" });
+        if (!data) {
+            return expenseView.notFound(res);
+        }
+
+        return expenseView.success(res, data);
+
+    } catch (error) {
+        return expenseView.serverError(res, error.message);
     }
-
-    res.json({ message: "Despesa eliminada con éxito" });
 }
 
+// CREATE
+function create(req, res) {
+    try {
+        const errors = expenseModel.validateCreate(req.body);
 
-// Calcular total de despesas
+        if (errors.length) {
+            return expenseView.validationError(res, errors);
+        }
 
-function getTotalGasto(req, res) {
-    const expense  = expenseModel.todasExpense()
+        const created = expenseModel.create(req.body);
+        return expenseView.created(res, created);
 
-    const total = expenseModel.totalSumado(expense)
-
-    res.status(200).json({total: total})
+    } catch (error) {
+        return expenseView.serverError(res, error.message);
+    }
 }
 
-// Calcular total de despesas por categoria 
+// UPDATE
+function update(req, res) {
+    try {
+        const errors = expenseModel.validateUpdate(req.body);
 
-function getTotalPorCategoria(req, res) {
-    const expense = expenseModel.todasExpense();
-    const totales = expenseModel.totalGastadoCategorias(expense);
-    res.status(200).json(totales);
+        if (errors.length) {
+            return expenseView.validationError(res, errors);
+        }
+
+        const updated = expenseModel.update(req.params.id, req.body);
+
+        if (!updated) {
+            return expenseView.notFound(res);
+        }
+
+        return expenseView.success(res, updated);
+
+    } catch (error) {
+        return expenseView.serverError(res, error.message);
+    }
 }
-// Exportamos las funciones del controller
+
+// DELETE
+function remove(req, res) {
+    try {
+        const ok = expenseModel.remove(req.params.id);
+
+        if (!ok) {
+            return expenseView.notFound(res);
+        }
+
+        return expenseView.removed(res);
+
+    } catch (error) {
+        return expenseView.serverError(res, error.message);
+    }
+}
+
 export default {
-    getAllDespesas,
-    getDespesaById,
-    createDespesa,
-    updateDespesa,
-    deleteDespesa,
-    getTotalGasto,
-    getTotalPorCategoria
+    list,
+    getById,
+    create,
+    update,
+    remove
 };

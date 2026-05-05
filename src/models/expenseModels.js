@@ -1,98 +1,103 @@
-const expense = []; // Array para almacenar las despesas
-let proximoID = 1; // Variable para generar IDs únicos
+const expenses = [];
+let nextId = 1;
 
-// Función para obtener todas las despesas
-function todasExpense() {
-    return expense;
+// GET ALL
+function findAll() {
+    return expenses;
 }
 
-// Función para obtener una despesa por su ID
-function buscarPorId(id) {
-    return expense.find(despesa => despesa.id === id);
+// GET BY ID
+function findById(id) {
+    return expenses.find(e => e.id === id) || null;
 }
 
-// Función para crear una nueva despesa
-function crearExpense(data) {
+// VALIDATION CREATE
+function validateCreate(data) {
+    const errors = [];
 
-    if (!data.title) throw new Error("El campo title es obligatorio");
-    if (data.amount <= 0) throw new Error("El amount debe ser mayor que 0");
-    if (new Date(data.date) > new Date()) throw new Error("La date no puede ser futura");
+    if (!data.title?.trim()) errors.push('title is required');
+    if (!data.amount || data.amount <= 0) errors.push('amount must be greater than 0');
+    if (!data.date || new Date(data.date) > new Date()) errors.push('date cannot be in the future');
 
-    const nuevaDespesa = {
-        id: 'exp_' + proximoID++, 
+    return errors;
+}
+
+// VALIDATION UPDATE
+function validateUpdate(data) {
+    const errors = [];
+
+    if (data.title !== undefined && !data.title.trim()) {
+        errors.push('title cannot be empty');
+    }
+
+    if (data.amount !== undefined && data.amount <= 0) {
+        errors.push('amount must be greater than 0');
+    }
+
+    if (data.date !== undefined && new Date(data.date) > new Date()) {
+        errors.push('date cannot be in the future');
+    }
+
+    return errors;
+}
+
+// CREATE
+function create(data) {
+    const expense = {
+        id: 'exp_' + nextId++,
         title: data.title,
         amount: data.amount,
         category: data.category,
         date: data.date,
         description: data.description || '',
-        createdAt: new Date().toISOString().split('.')[0]
+        createdAt: new Date().toISOString()
     };
 
-    expense.push(nuevaDespesa);
-    return nuevaDespesa;
+    expenses.push(expense);
+    return expense;
 }
 
-// Función para actualizar una despesa por su ID
-function actualizarExpense(id, data) {
+// UPDATE
+function update(id, data) {
+    const expense = findById(id);
+    if (!expense) return null;
 
-    if (data.title !== undefined && !data.title) throw new Error("El campo title es obligatorio");
-    if (data.amount !== undefined && data.amount <= 0) throw new Error("El amount debe ser mayor que 0");
-    if (data.date !== undefined && new Date(data.date) > new Date()) throw new Error("La date no puede ser futura");
+    delete data.id;
+    Object.assign(expense, data);
 
-    const despesa = buscarPorId(id);
-    if (!despesa) {
-        return null;
-    }
-
-    if ('id' in data) delete data.id; 
-
-    Object.assign(despesa, data);
-    return despesa;
+    return expense;
 }
 
-// Función para eliminar una despesa por su ID
-function eliminarExpense(id) {
-    const index = expense.findIndex(despesa => despesa.id === id);
-    if (index === -1) {
-        return false;
-    }
-    expense.splice(index, 1);
+// DELETE
+function remove(id) {
+    const index = expenses.findIndex(e => e.id === id);
+    if (index === -1) return false;
+
+    expenses.splice(index, 1);
     return true;
 }
 
-// funcion para sumar todas las despesas por amount
-
-function totalSumado(expense) {
-    let total = 0;
-    for(let i = 0; i < expense.length; i++){
-        total = total + expense[i].amount
-    }
-
-    return total;
+// TOTAL
+function calculateTotal(list) {
+    return list.reduce((sum, e) => sum + e.amount, 0);
 }
 
-// funcion para separar por categoria el total de gastos
-
-function totalGastadoCategorias(expense){
-    
-    let totales = {}
-
-    for(let i = 0; i < expense.length; i++){
-        if(!totales [expense[i].category]) {
-            totales[expense[i].category] = expense[i].amount;
-        } else {
-            totales[expense[i].category] += expense[i].amount;
-        }
-    }
-    return totales; 
+// GROUP BY CATEGORY
+function groupByCategory(list) {
+    return list.reduce((acc, e) => {
+        acc[e.category] = (acc[e.category] || 0) + e.amount;
+        return acc;
+    }, {});
 }
 
 export default {
-    todasExpense,
-    buscarPorId,
-    crearExpense,
-    actualizarExpense,
-    eliminarExpense,
-    totalSumado,
-    totalGastadoCategorias
+    findAll,
+    findById,
+    validateCreate,
+    validateUpdate,
+    create,
+    update,
+    remove,
+    calculateTotal,
+    groupByCategory
 };
