@@ -2,6 +2,16 @@
 
 API em Node.js para gerenciamento de despesas pessoais.
 
+## Features
+
+- Padronização RestFul 
+- Padronização de linguagem para o ingles
+- Implementação da estrutura MVC contendo a view para respostas de status
+- HEALT CHECK da API
+- Mudança em nomes de function para a organização do codigo
+- Versionamento da API
+
+
 ## 1. Descrição
 
 Esta API permite gerenciar despesas pessoais com operações de:
