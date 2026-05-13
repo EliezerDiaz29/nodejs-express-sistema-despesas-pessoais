@@ -1,17 +1,93 @@
-const expenses = [];
-let nextId = 1;
+import sequelize from "./database";
+import { DataTypes } from "sequelize";
+
+const Expense = sequelize.define('expenses', {
+        id: {
+            type: DataTypes.INTEGER,
+            autoIncrement: true,
+            primaryKey: true,
+            unique: true
+        },
+        title: {
+            type: DataTypes.STRING,
+            allowNull: false
+            
+        },
+        amount: {
+            type: DataTypes.DOUBLE,
+            allowNull: false
+        },
+        category: {
+            type: DataTypes.STRING,
+            allowNull: false
+
+        },
+        date: {
+            type: DataTypes.DATE,
+            allowNull: false
+
+        },
+        description: {
+            type: DataTypes.STRING,
+            allowNull: false
+
+        },
+        createdAt: {
+            type: DataTypes.DATE,
+            allowNull: false
+        }
+
+})
+
 
 // GET ALL
-function findAll() {
-    return expenses;
+async function findAll() {
+    return await Expense.findAll();
 }
 
 // GET BY ID
-function findById(id) {
-    return expenses.find(e => e.id === id) || null;
+ async function findById(id) {
+    return await Expense.findByPk(id)
 }
 
-// VALIDATION CREATE
+
+// CREATE
+async function create(id, title, amount, category, date, description, createdAt) {
+    return await Expense.create({id, title, amount, category, date, description, createdAt})
+}
+
+// UPDATE
+async function update(id, title, amount, category, date, description, createdAt) {
+    const expense = await findById(id);
+
+    if (!expense) {
+        return null;
+    }
+
+    expense.id = id;
+    expense.title = title;
+    expense.amount = amount;
+    expense.category = category;
+    expense.date = date;
+    expense.description = description;
+    expense.createdAt = createdAt;
+
+    await expense.save();
+    return expense;
+
+}
+
+// DELETE
+async function remove(id) {
+    const expense = await findById(id);
+    if (!expense) {
+        return null;
+    }
+    await expense.destroy();
+    return null; 
+}
+
+/*// VALIDATION CREATE
 function validateCreate(data) {
     const errors = [];
 
@@ -41,45 +117,11 @@ function validateUpdate(data) {
     return errors;
 }
 
-// CREATE
-function create(data) {
-    const expense = {
-        id: 'exp_' + nextId++,
-        title: data.title,
-        amount: data.amount,
-        category: data.category,
-        date: data.date,
-        description: data.description || '',
-        createdAt: new Date().toISOString()
-    };
-
-    expenses.push(expense);
-    return expense;
-}
-
-// UPDATE
-function update(id, data) {
-    const expense = findById(id);
-    if (!expense) return null;
-
-    delete data.id;
-    Object.assign(expense, data);
-
-    return expense;
-}
-
-// DELETE
-function remove(id) {
-    const index = expenses.findIndex(e => e.id === id);
-    if (index === -1) return false;
-
-    expenses.splice(index, 1);
-    return true;
-}
 
 // TOTAL
-function calculateTotal(list) {
-    return list.reduce((sum, e) => sum + e.amount, 0);
+
+async function calculateTotal(list) {
+    return await list.reduce((sum, e) => sum + e.amount, 0);
 }
 
 // GROUP BY CATEGORY
@@ -88,16 +130,17 @@ function groupByCategory(list) {
         acc[e.category] = (acc[e.category] || 0) + e.amount;
         return acc;
     }, {});
-}
+}*/
 
 export default {
     findAll,
     findById,
-    validateCreate,
-    validateUpdate,
     create,
     update,
     remove,
-    calculateTotal,
-    groupByCategory
+
+    /*calculateTotal,
+    groupByCategory,
+    validateCreate,
+    validateUpdate*/
 };
