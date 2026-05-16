@@ -2,9 +2,9 @@ import expenseModel from '../models/expenseModels.js';
 import expenseView from '../views/expenseViews.js';
 
 // LIST
-function list(req, res) {
+async function list(req, res) {
     try {
-        let data = expenseModel.findAll();
+        let data = await expenseModel.findAll();
 
         const { category, startDate, endDate, summary, groupBy } = req.query;
 
@@ -38,9 +38,9 @@ function list(req, res) {
 }
 
 // GET BY ID
-function getById(req, res) {
+async function getById(req, res) {
     try {
-        const data = expenseModel.findById(req.params.id);
+        const data = await expenseModel.findById(req.params.id);
 
         if (!data) {
             return expenseView.notFound(res);
@@ -54,7 +54,7 @@ function getById(req, res) {
 }
 
 // CREATE
-function create(req, res) {
+async function create(req, res) {
     try {
         const errors = expenseModel.validateCreate(req.body);
 
@@ -62,7 +62,7 @@ function create(req, res) {
             return expenseView.validationError(res, errors);
         }
 
-        const created = expenseModel.create(req.body);
+        const created = await expenseModel.create(req.body);
         return expenseView.created(res, created);
 
     } catch (error) {
@@ -71,7 +71,7 @@ function create(req, res) {
 }
 
 // UPDATE
-function update(req, res) {
+async function update(req, res) {
     try {
         const errors = expenseModel.validateUpdate(req.body);
 
@@ -79,7 +79,7 @@ function update(req, res) {
             return expenseView.validationError(res, errors);
         }
 
-        const updated = expenseModel.update(req.params.id, req.body);
+        const updated = await expenseModel.update(req.params.id, req.body);
 
         if (!updated) {
             return expenseView.notFound(res);
@@ -93,9 +93,9 @@ function update(req, res) {
 }
 
 // DELETE
-function remove(req, res) {
+async function remove(req, res) {
     try {
-        const ok = expenseModel.remove(req.params.id);
+        const ok = await expenseModel.remove(req.params.id);
 
         if (!ok) {
             return expenseView.notFound(res);

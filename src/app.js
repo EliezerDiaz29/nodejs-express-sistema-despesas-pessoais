@@ -1,9 +1,12 @@
 import express from 'express';
 import expenseRoutes from './routes/expenseRoutes.js';
 import sequelize from './models/database.js';
+
 const app = express();
 
 app.use(express.json());
+
+const PORT = 3000;
 
 // API VERSIONING
 app.use('/api/v1/expenses', expenseRoutes);
@@ -28,9 +31,9 @@ async function databaseConnect() {
     try {
         await sequelize.authenticate();
         await sequelize.sync({alter: true});
-        console.log('The Database connection as been established'); 
-        app.listen(3000, () => {
-            console.log('Server running on port 3000');
+        console.log('The database connection as been established'); 
+        app.listen(PORT, () => {
+            console.log('Server running on port', PORT);
     });
 
     } catch (err) {

@@ -10,6 +10,8 @@ API em Node.js para gerenciamento de despesas pessoais.
 - HEALT CHECK da API
 - Mudança em nomes de function para a organização do codigo
 - Versionamento da API
+- Integração de banco de dados com o sequelize
+- Criação do banco de dados expenseSys
 
 
 ## 1. Descrição
@@ -26,6 +28,7 @@ Esta API permite gerenciar despesas pessoais com operações de:
 ## 2. Tecnologias
 - Node.js
 - Express
+- ORM Sequelize
 - JavaScript (ES Modules)
 
 ## 3. Como executar
@@ -58,15 +61,9 @@ GET /api/v1/expenses/summary/category
 ## 7. Modelo de dados
 
 {
-  "id": "exp_1",
   "title": "Consulta médica",
   "amount": 250,
   "category": "saude",
   "date": "2025-03-10",
-  "description": "Consulta particular",
-  "createdAt": "2025-03-10T09:30:00"
+  "description": "Consulta particular"
 }
-
-## 8. Observações
-- Dados em memória
-- Perde dados ao reiniciar servidor

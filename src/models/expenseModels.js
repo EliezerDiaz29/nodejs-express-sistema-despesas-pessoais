@@ -1,4 +1,4 @@
-import sequelize from "./database";
+import sequelize from "./database.js";
 import { DataTypes } from "sequelize";
 
 const Expense = sequelize.define('expenses', {
@@ -31,12 +31,7 @@ const Expense = sequelize.define('expenses', {
             type: DataTypes.STRING,
             allowNull: false
 
-        },
-        createdAt: {
-            type: DataTypes.DATE,
-            allowNull: false
         }
-
 })
 
 
@@ -46,35 +41,33 @@ async function findAll() {
 }
 
 // GET BY ID
- async function findById(id) {
+async function findById(id) {
     return await Expense.findByPk(id)
 }
 
 
 // CREATE
-async function create(id, title, amount, category, date, description, createdAt) {
-    return await Expense.create({id, title, amount, category, date, description, createdAt})
+async function create(data) {
+    return await Expense.create(data)
 }
 
 // UPDATE
-async function update(id, title, amount, category, date, description, createdAt) {
+async function update(id, data) {
     const expense = await findById(id);
 
     if (!expense) {
         return null;
     }
 
-    expense.id = id;
-    expense.title = title;
-    expense.amount = amount;
-    expense.category = category;
-    expense.date = date;
-    expense.description = description;
-    expense.createdAt = createdAt;
+    expense.title = data.title;
+    expense.amount = data.amount;
+    expense.category = data.category;
+    expense.date = data.date;
+    expense.description = data.description;
 
     await expense.save();
-    return expense;
 
+    return expense;
 }
 
 // DELETE
@@ -84,10 +77,24 @@ async function remove(id) {
         return null;
     }
     await expense.destroy();
-    return null; 
+    
+    return true; 
 }
 
-/*// VALIDATION CREATE
+// TOTAL
+function calculateTotal(list) {
+    return list.reduce((sum, e) => sum + e.amount, 0);
+}
+
+// GROUP BY CATEGORY
+function groupByCategory(list) {
+    return list.reduce((acc, e) => {
+        acc[e.category] = (acc[e.category] || 0) + e.amount;
+        return acc;
+    }, {});
+}
+
+// VALIDATION CREATE
 function validateCreate(data) {
     const errors = [];
 
@@ -117,30 +124,14 @@ function validateUpdate(data) {
     return errors;
 }
 
-
-// TOTAL
-
-async function calculateTotal(list) {
-    return await list.reduce((sum, e) => sum + e.amount, 0);
-}
-
-// GROUP BY CATEGORY
-function groupByCategory(list) {
-    return list.reduce((acc, e) => {
-        acc[e.category] = (acc[e.category] || 0) + e.amount;
-        return acc;
-    }, {});
-}*/
-
 export default {
     findAll,
     findById,
     create,
     update,
     remove,
-
-    /*calculateTotal,
+    calculateTotal,
     groupByCategory,
     validateCreate,
-    validateUpdate*/
-};
+    validateUpdate
+}
