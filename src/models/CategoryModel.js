@@ -1,7 +1,7 @@
-import sequelize from "./database";
+import sequelize from "./database.js";
 import { DataTypes } from "sequelize";
 
-const Category = sequelize.define("category", {
+const Category = sequelize.define("categories", {
     id: {
         type: DataTypes.INTEGER,
         allowNull: false,
@@ -13,6 +13,9 @@ const Category = sequelize.define("category", {
     name: {
         type: DataTypes.STRING,
         allowNull: false,
+        validate: {
+            notEmpty: true
+        }
     },
 
     description: {
@@ -43,8 +46,8 @@ class CategoryModel {
             return null;
         }
 
-        category.name = data.name;
-        category.description = data.description
+        if (data.name) category.name = data.name;
+        if (data.description) category.description = data.description;
 
         await category.save();
 
@@ -65,5 +68,6 @@ class CategoryModel {
 
 const categoryModel = new CategoryModel();
 
-export default CategoryModel; 
+export default categoryModel;
 
+export { Category };

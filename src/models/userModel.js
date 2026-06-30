@@ -1,4 +1,5 @@
-import sequelize from "./database";
+import bcrypt from 'bcrypt';
+import sequelize from "./database.js";
 import { DataTypes } from "sequelize";
 
 const User = sequelize.define("users", {
@@ -6,7 +7,6 @@ const User = sequelize.define("users", {
         type: DataTypes.INTEGER,
         autoIncrement: true,
         primaryKey: true,
-        unique: true,
     },
 
     nameUser: {
@@ -18,52 +18,46 @@ const User = sequelize.define("users", {
         type: DataTypes.STRING,
         allowNull: false,
         unique: true,
+        validate: {
+            isEmail: true
+        }
     },
 
     password: {
         type: DataTypes.STRING,
         allowNull: false,
-    },
-
-    createdAt: {
-        type: DataTypes.DATE,
-        allowNull: false,
-        defaultValue: DataTypes.NOW,
-    },
-
-    updateAt: {
-        type: DataTypes.DATE,
-        allowNull: false,
-    },
+    }
+}, {
+    timestamps: true
 });
 
 class UserModel {
-    constructor() {}
 
-    async getUserById() {
-        return await User.findByPk;
+    async getUserById(id) {
+        return await User.findByPk(id);
+    }
+
+    async getUserByEmail(email) {
+        return await User.findOne({ where: { email } });
     }
 
     async getAllUser() {
-        return await User.findAll;
+        return await User.findAll();
     }
 
-    async createUser(nameUser, email, password, createAt, updateAt) {
-        return User.create({ nameUser, email, password, createAt, updateAt });
+    async createUser(nameUser, email, password) {
+        const hashedPassword = await bcrypt.hash(password, 10);
+        return await User.create({ nameUser, email, password: hashedPassword });
     }
 
-    async updateUser(id, name, email, password, createAt, updateAt) {
+    async updateUser(id, nameUser, email, password) {
         const user = await this.getUserById(id);
 
-        if (!user) {
-            return null;
-        }
+        if (!user) return null;
 
-            user.nameUser = name,
-            user.email = email,
-            user.password = password,
-            user.createAt = createAt,
-            user.updateAt = updateAt;
+        if (nameUser) user.nameUser = nameUser;
+        if (email) user.email = email;
+        if (password) user.password = await bcrypt.hash(password, 10);
 
         await user.save();
 
@@ -71,18 +65,21 @@ class UserModel {
     }
 
     async deleteUser(id) {
-
         const user = await this.getUserById(id);
 
-        if(!user) {
-            return null;
-        }
-        await user.destroy()
-        return null;
+        if (!user) return null;
 
+        await user.destroy();
+        return true;
+    }
+
+    async checkPassword(plainPassword, hashedPassword) {
+        return await bcrypt.compare(plainPassword, hashedPassword);
     }
 }
 
 const userModel = new UserModel();
 
-export default UserModel;
+export default userModel;
+
+export { User };

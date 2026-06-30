@@ -1,9 +1,9 @@
 import jwt from 'jsonwebtoken'
-import authConfig from '../config/auth'
+import authConfig from '../config/auth.js'
 
 export default function authMiddleware(req, res, next) {
     
-    const authHeader = req.header.authorization;
+    const authHeader = req.headers.authorization;
 
     if(!authHeader){
         return res.status(401).json({error: 'Token not reported'});
@@ -25,7 +25,9 @@ export default function authMiddleware(req, res, next) {
         const method = req.method;
         const path = req.path;
 
-        console.log(`Authentication Middleware: ${method} ${path} User: ${req.user.email}})`);
+        console.log(`Auth: ${method} ${path} - User: ${req.user.email}`);
+
+        next();
 
     } catch (e) {
         return res.status(401).json({error: 'Invalid or expired token'})

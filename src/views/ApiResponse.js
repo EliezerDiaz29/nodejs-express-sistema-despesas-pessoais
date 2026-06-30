@@ -1,4 +1,10 @@
-function response(res, { status = 200, success = true, message = null, data = null, errors = null }) {
+function response(res, {
+    status = 200,
+    success = true,
+    message = '',
+    data = null,
+    errors = null
+}) {
     return res.status(status).json({
         success,
         status,
@@ -8,7 +14,6 @@ function response(res, { status = 200, success = true, message = null, data = nu
     });
 }
 
-// SUCCESS
 function success(res, data, message = 'OK') {
     return response(res, {
         status: 200,
@@ -18,7 +23,6 @@ function success(res, data, message = 'OK') {
     });
 }
 
-// CREATED
 function created(res, data, message = 'Created successfully') {
     return response(res, {
         status: 201,
@@ -28,7 +32,6 @@ function created(res, data, message = 'Created successfully') {
     });
 }
 
-// VALIDATION ERROR
 function validationError(res, errors, message = 'Validation error') {
     return response(res, {
         status: 400,
@@ -38,7 +41,14 @@ function validationError(res, errors, message = 'Validation error') {
     });
 }
 
-// NOT FOUND
+function unauthorized(res, message = 'Unauthorized') {
+    return response(res, {
+        status: 401,
+        success: false,
+        message
+    });
+}
+
 function notFound(res, message = 'Resource not found') {
     return response(res, {
         status: 404,
@@ -47,7 +57,6 @@ function notFound(res, message = 'Resource not found') {
     });
 }
 
-// REMOVED
 function removed(res, message = 'Deleted successfully') {
     return response(res, {
         status: 200,
@@ -56,21 +65,11 @@ function removed(res, message = 'Deleted successfully') {
     });
 }
 
-// SERVER ERROR
-function serverError(res, error) {
-    return response(res, {
-        status: 500,
-        success: false,
-        message: 'Internal server error',
-        errors: error
-    });
-}
-
 export default {
     success,
     created,
     validationError,
+    unauthorized,
     notFound,
-    removed,
-    serverError
+    removed
 };

@@ -1,110 +1,138 @@
 import expenseModel from '../models/expenseModels.js';
-import expenseView from '../views/expenseViews.js';
+import apiResponse from '../views/ApiResponse.js';
 
 // LIST
-async function list(req, res) {
+async function list(req, res, next) {
     try {
-        let data = await expenseModel.findAll();
+        const {
+            categoryId,
+            status,
+            startDate,
+            endDate,
+            minAmount,
+            maxAmount
+        } = req.query;
 
-        const { category, startDate, endDate, summary, groupBy } = req.query;
+        const data = await expenseModel.findAll({
+            userId: req.user.id,
+            categoryId,
+            status,
+            startDate,
+            endDate,
+            minAmount,
+            maxAmount
+        });
 
-        if (category) {
-            data = data.filter(e => e.category === category);
-        }
-
-        if (startDate) {
-            data = data.filter(e => new Date(e.date) >= new Date(startDate));
-        }
-
-        if (endDate) {
-            data = data.filter(e => new Date(e.date) <= new Date(endDate));
-        }
-
-        if (summary === 'total') {
-            return expenseView.success(res, {
-                total: expenseModel.calculateTotal(data)
-            });
-        }
-
-        if (groupBy === 'category') {
-            return expenseView.success(res, expenseModel.groupByCategory(data));
-        }
-
-        return expenseView.success(res, data);
+        return apiResponse.success(
+            res,
+            data,
+            'Expenses retrieved successfully'
+        );
 
     } catch (error) {
-        return expenseView.serverError(res, error.message);
+        next(error);
     }
 }
 
 // GET BY ID
-async function getById(req, res) {
+async function getById(req, res, next) {
     try {
-        const data = await expenseModel.findById(req.params.id);
+        const data = await expenseModel.findById(
+            req.params.id,
+            req.user.id
+        );
 
         if (!data) {
-            return expenseView.notFound(res);
+            return apiResponse.notFound(res);
         }
 
-        return expenseView.success(res, data);
+        return apiResponse.success(
+            res,
+            data,
+            'Expense retrieved successfully'
+        );
 
     } catch (error) {
-        return expenseView.serverError(res, error.message);
+        next(error);
     }
 }
 
 // CREATE
-async function create(req, res) {
+async function create(req, res, next) {
     try {
-        const errors = expenseModel.validateCreate(req.body);
+        const payload = {
+            ...req.body,
+            userId: req.user.id
+        };
+
+        const errors = expenseModel.validateCreate(payload);
 
         if (errors.length) {
-            return expenseView.validationError(res, errors);
+            return apiResponse.validationError(res, errors);
         }
 
-        const created = await expenseModel.create(req.body);
-        return expenseView.created(res, created);
+        const created = await expenseModel.create(payload);
+
+        return apiResponse.created(
+            res,
+            created,
+            'Expense created successfully'
+        );
 
     } catch (error) {
-        return expenseView.serverError(res, error.message);
+        next(error);
     }
 }
 
 // UPDATE
-async function update(req, res) {
+async function update(req, res, next) {
     try {
         const errors = expenseModel.validateUpdate(req.body);
 
         if (errors.length) {
-            return expenseView.validationError(res, errors);
+            return apiResponse.validationError(res, errors);
         }
 
-        const updated = await expenseModel.update(req.params.id, req.body);
+        const updated = await expenseModel.update(
+            req.params.id,
+            req.user.id,
+            req.body
+        );
 
         if (!updated) {
-            return expenseView.notFound(res);
+            return apiResponse.notFound(res);
         }
 
-        return expenseView.success(res, updated);
+        return apiResponse.success(
+            res,
+            updated,
+            'Expense updated successfully'
+        );
 
     } catch (error) {
-        return expenseView.serverError(res, error.message);
+        next(error);
     }
 }
 
 // DELETE
-async function remove(req, res) {
+async function remove(req, res, next) {
     try {
-        const ok = await expenseModel.remove(req.params.id);
+        const removed = await expenseModel.remove(
+            req.params.id,
+            req.user.id
+        );
 
-        if (!ok) {
-            return expenseView.notFound(res);
+        if (!removed) {
+            return apiResponse.notFound(res);
         }
 
-        return expenseView.removed(res);
+        return apiResponse.removed(
+            res,
+            'Expense deleted successfully'
+        );
 
     } catch (error) {
-        return expenseView.serverError(res, error.message);
+        next(error);
     }
 }
 

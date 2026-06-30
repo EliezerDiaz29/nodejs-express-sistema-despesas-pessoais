@@ -1,116 +1,167 @@
 import sequelize from "./database.js";
-import { DataTypes } from "sequelize";
+import { DataTypes, Sequelize } from "sequelize";
 
+// Modelo de gastos
 const Expense = sequelize.define('expenses', {
-        id: {
-            type: DataTypes.INTEGER,
-            autoIncrement: true,
-            primaryKey: true,
-            unique: true
-        },
-        title: {
-            type: DataTypes.STRING,
-            allowNull: false
-            
-        },
-        amount: {
-            type: DataTypes.DOUBLE,
-            allowNull: false
-        },
-        category: {
-            type: DataTypes.STRING,
-            allowNull: false
+    id: {
+        type: DataTypes.INTEGER,
+        autoIncrement: true,
+        primaryKey: true,
+        unique: true
+    },
 
-        },
-        date: {
-            type: DataTypes.DATE,
-            allowNull: false
-
-        },
-        description: {
-            type: DataTypes.STRING,
-            allowNull: false
-
+    title: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        validate: {
+            notEmpty: true
         }
-})
+    },
 
+    description: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        validate: {
+            notEmpty: true
+        }
+    },
 
-// GET ALL
-async function findAll() {
-    return await Expense.findAll();
-}
+    amount: {
+        type: DataTypes.DOUBLE,
+        allowNull: false,
+        validate: {
+            min: 0.01
+        }
+    },
 
-// GET BY ID
-async function findById(id) {
-    return await Expense.findByPk(id)
-}
+    date: {
+        type: DataTypes.DATEONLY,
+        allowNull: false
+    },
 
+    status: {
+        type: Sequelize.ENUM('PENDING', 'PAID'),
+        allowNull: false,
+        defaultValue: 'PENDING'
+    },
 
-// CREATE
-async function create(data) {
-    return await Expense.create(data)
-}
+    categoryId: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        references: {
+            model: 'categories',
+            key: 'id'
+        },
+        onUpdate: 'CASCADE',
+        onDelete: 'RESTRICT'
+    },
 
-// UPDATE
-async function update(id, data) {
-    const expense = await findById(id);
+    userId: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        references: {
+            model: 'users',
+            key: 'id'
+        },
+        onUpdate: 'CASCADE',
+        onDelete: 'CASCADE'
+    }
+});
 
-    if (!expense) {
-        return null;
+// Obtener todos los gastos con filtros opcionales
+async function findAll(filters = {}) {
+    const { Op } = await import('sequelize');
+    const where = {};
+
+    if (filters.userId) where.userId = filters.userId;
+    if (filters.categoryId) where.categoryId = filters.categoryId;
+    if (filters.status) where.status = filters.status;
+
+    // Filtro por rango de fechas
+    if (filters.startDate || filters.endDate) {
+        where.date = {};
+        if (filters.startDate) where.date[Op.gte] = filters.startDate;
+        if (filters.endDate) where.date[Op.lte] = filters.endDate;
     }
 
-    expense.title = data.title;
-    expense.amount = data.amount;
-    expense.category = data.category;
-    expense.date = data.date;
-    expense.description = data.description;
+    // Filtro por rango de monto
+    if (filters.minAmount || filters.maxAmount) {
+        where.amount = {};
+        if (filters.minAmount) where.amount[Op.gte] = Number(filters.minAmount);
+        if (filters.maxAmount) where.amount[Op.lte] = Number(filters.maxAmount);
+    }
+
+    return await Expense.findAll({ where });
+}
+
+// Buscar gasto por ID y usuario
+async function findById(id, userId) {
+    return await Expense.findOne({
+        where: { id, userId }
+    });
+}
+
+// Crear gasto
+async function create(data) {
+    return await Expense.create(data);
+}
+
+// Actualizar gasto
+async function update(id, userId, data) {
+    const expense = await findById(id, userId);
+
+    if (!expense) return null;
+
+    if (data.title !== undefined) expense.title = data.title;
+    if (data.description !== undefined) expense.description = data.description;
+    if (data.amount !== undefined) expense.amount = data.amount;
+    if (data.date !== undefined) expense.date = data.date;
+    if (data.status !== undefined) expense.status = data.status;
+    if (data.categoryId !== undefined) expense.categoryId = data.categoryId;
 
     await expense.save();
 
     return expense;
 }
 
-// DELETE
-async function remove(id) {
-    const expense = await findById(id);
-    if (!expense) {
-        return null;
-    }
+// Eliminar gasto
+async function remove(id, userId) {
+    const expense = await findById(id, userId);
+
+    if (!expense) return null;
+
     await expense.destroy();
-    
-    return true; 
+
+    return true;
 }
 
-// TOTAL
-function calculateTotal(list) {
-    return list.reduce((sum, e) => sum + e.amount, 0);
-}
-
-// GROUP BY CATEGORY
-function groupByCategory(list) {
-    return list.reduce((acc, e) => {
-        acc[e.category] = (acc[e.category] || 0) + e.amount;
-        return acc;
-    }, {});
-}
-
-// VALIDATION CREATE
+// Validación para crear gasto
 function validateCreate(data) {
     const errors = [];
 
     if (!data.title?.trim()) errors.push('title is required');
+    if (!data.description?.trim()) errors.push('description is required');
     if (!data.amount || data.amount <= 0) errors.push('amount must be greater than 0');
     if (!data.date || new Date(data.date) > new Date()) errors.push('date cannot be in the future');
+    if (!data.categoryId) errors.push('categoryId is required');
+
+    if (data.status && !['PENDING', 'PAID'].includes(data.status)) {
+        errors.push('status must be PENDING or PAID');
+    }
 
     return errors;
 }
 
-// VALIDATION UPDATE
+// Validación para actualizar gasto
 function validateUpdate(data) {
     const errors = [];
 
     if (data.title !== undefined && !data.title.trim()) {
         errors.push('title cannot be empty');
+    }
+
+    if (data.description !== undefined && !data.description.trim()) {
+        errors.push('description cannot be empty');
     }
 
     if (data.amount !== undefined && data.amount <= 0) {
@@ -119,6 +170,10 @@ function validateUpdate(data) {
 
     if (data.date !== undefined && new Date(data.date) > new Date()) {
         errors.push('date cannot be in the future');
+    }
+
+    if (data.status !== undefined && !['PENDING', 'PAID'].includes(data.status)) {
+        errors.push('status must be PENDING or PAID');
     }
 
     return errors;
@@ -130,8 +185,8 @@ export default {
     create,
     update,
     remove,
-    calculateTotal,
-    groupByCategory,
     validateCreate,
     validateUpdate
-}
+};
+
+export { Expense };
